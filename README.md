@@ -13,7 +13,7 @@
 2. GNN 異常偵測模型 (Spatial Reasoning)：<br>
     * 採用 GAT (Graph Attention Network) 卷積層，捕捉供應鏈節點間的價格與成交量連動特徵。<br>
     * 自研異常評分機制：<br>
-         - $$\text{Anomaly Score} = |f_{\text{GAT}}(X) - \text{Price}| + |\text{Sentiment} - \text{Price}|$$<br>
+         - $$Score = |f_{\text{GAT}}(X, \text{Edges}) - X_{\text{actual}}|$$<br>
 3. 端對端 Web 交互介面：<br>
     * 基於 Flask 框架構建，實現搜尋、運算、視覺化與報告生成的一鍵式體驗。<br>
     * 整合 Matplotlib 高性能渲染技術，動態生成風險熱圖 (Risk Heatmap)。<br>
