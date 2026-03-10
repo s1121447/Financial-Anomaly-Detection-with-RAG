@@ -37,14 +37,15 @@
 - 顯示節點異常程度
 - 顯示 AI 自動化分析報告
 
-目前以 Logistic Regression 作為 baseline，僅使用節點表格特徵，不考慮圖結構。結果顯示 baseline 雖然達到 92.37% 的 accuracy，但對異常類別完全無法辨識（Precision / Recall / F1 皆為 0）。
+本專案以 Logistic Regression 作為 baseline，並與 GAT 模型進行比較。
 
-GAT 模型的驗證 accuracy 為 92.68%，在異常類別上已經比 baseline 略有改善（Precision = 1.0000, Recall = 0.0123, F1 = 0.0244），顯示圖結構對異常辨識具有一定幫助。然而，目前模型仍高度偏向預測正常類別，反映出資料集中類別不平衡問題仍然非常明顯。
+| Model | Accuracy | Precision (Anomaly) | Recall (Anomaly) | F1 (Anomaly) |
+|---|---:|---:|---:|---:|
+| Logistic Regression | 0.9237 | 0.0000 | 0.0000 | 0.0000 |
+| GAT (unweighted) | 0.9268 | 1.0000 | 0.0123 | 0.0244 |
+| GAT (weighted loss) | 0.8984 | 0.1831 | 0.1070 | 0.1351 |
 
-| Model               | Accuracy | Precision (Anomaly) | Recall (Anomaly) | F1 (Anomaly) | Observation            |
-| ------------------- | -------: | ------------------: | ---------------: | -----------: | ---------------------- |
-| Logistic Regression |   0.9237 |              0.0000 |           0.0000 |       0.0000 | 完全抓不到異常                |
-| GAT (current)       |   0.9268 |              1.0000 |           0.0123 |       0.0244 | 比 baseline 好，但仍嚴重偏向正常類 |
+結果顯示，雖然 baseline 與未加權 GAT 在 accuracy 上表現較高，但對異常類別幾乎沒有辨識能力。加入 class weights 後，GAT 在 anomaly recall 與 F1-score 上明顯提升，顯示在高度類別不平衡的金融異常偵測任務中，單看 accuracy 並不足以反映模型的真實效能。
 
 
 ---
