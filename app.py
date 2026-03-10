@@ -9,7 +9,7 @@ import networkx as nx
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from google import genai
-
+from inference import run_inference, is_after_market_close
 from inference import run_inference
 from config import GEMINI_MODEL
 
@@ -193,6 +193,7 @@ def analyze_individual(symbol):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    cache_mode = "盤後快取模式" if is_after_market_close() else "盤中即時推論模式"
     report = None
     plot_url = None
     stocks_info = []
@@ -207,7 +208,8 @@ def index():
                 report=report,
                 plot_url=plot_url,
                 stocks_info=stocks_info,
-                risk_table=risk_table
+                risk_table=risk_table,
+                cache_mode=cache_mode
             )
 
         if "." not in target:

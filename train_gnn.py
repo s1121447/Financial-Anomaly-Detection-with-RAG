@@ -108,7 +108,7 @@ def main():
 
     model = GATNodeClassifier(
         in_channels=len(FEATURE_COLUMNS),
-        hidden_channels=32,
+        hidden_channels=16,
         num_classes=2
     ).to(device)
 
@@ -157,7 +157,7 @@ def main():
                 {
                     "model_state_dict": model.state_dict(),
                     "feature_columns": FEATURE_COLUMNS,
-                    "hidden_channels": 32
+                    "hidden_channels": 16
                 },
                 best_path
             )

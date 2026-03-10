@@ -1,12 +1,41 @@
-import os
 import torch
+import os
+import json
+from datetime import datetime
 from torch_geometric.data import Data
 
 from graph_builder import discover_supply_chain_graph
 from feature_builder import build_feature_store, recent_edge_correlation
 from model import GATNodeClassifier
 from config import CHECKPOINT_DIR, FEATURE_COLUMNS, LOOKBACK_PERIOD
+from config import RESULT_CACHE_DIR, MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE
 
+def is_after_market_close():
+    now = datetime.now()
+    return (now.hour > MARKET_CLOSE_HOUR) or (
+        now.hour == MARKET_CLOSE_HOUR and now.minute >= MARKET_CLOSE_MINUTE
+    )
+
+
+def get_result_cache_path(target_symbol: str):
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    safe_symbol = target_symbol.replace(".", "_")
+    os.makedirs(RESULT_CACHE_DIR, exist_ok=True)
+    return os.path.join(RESULT_CACHE_DIR, f"{safe_symbol}_{today_str}.json")
+
+
+def save_inference_cache(target_symbol: str, infer_result: dict):
+    path = get_result_cache_path(target_symbol)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(infer_result, f, ensure_ascii=False, indent=2)
+
+
+def load_inference_cache(target_symbol: str):
+    path = get_result_cache_path(target_symbol)
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return None
 
 def build_latest_graph_data(target_symbol: str):
     graph = discover_supply_chain_graph(target_symbol)
@@ -111,7 +140,7 @@ def load_model():
     return model
 
 
-def run_inference(target_symbol: str):
+def run_inference_fresh(target_symbol: str):
     model = load_model()
     data, edge_meta = build_latest_graph_data(target_symbol)
 
@@ -139,3 +168,26 @@ def run_inference(target_symbol: str):
         "raw_roles": data.roles,
         "edge_meta": edge_meta
     }
+
+
+def run_inference(target_symbol: str):
+    target_symbol = target_symbol.strip().upper()
+    if "." not in target_symbol:
+        target_symbol += ".TW"
+
+    # 13:30 前：一律即時計算
+    if not is_after_market_close():
+        print(f"[Inference] 盤中模式，重新推論：{target_symbol}")
+        return run_inference_fresh(target_symbol)
+
+    # 13:30 後：優先讀 cache
+    cached = load_inference_cache(target_symbol)
+    if cached is not None:
+        print(f"[Inference] 盤後讀取 cache：{target_symbol}")
+        return cached
+
+    # 13:30 後沒 cache：重新推論並存檔
+    print(f"[Inference] 盤後無 cache，重新推論並寫入：{target_symbol}")
+    result = run_inference_fresh(target_symbol)
+    save_inference_cache(target_symbol, result)
+    return result

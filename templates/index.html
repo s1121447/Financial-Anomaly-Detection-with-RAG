@@ -65,6 +65,7 @@
     <form method="POST">
         <input type="text" name="symbol" placeholder="輸入台股代號（如 2330）" required>
         <button type="submit" id="main-btn">啟動 GNN 推論</button>
+        <p style="color:#666; margin-top:10px;">目前模式：{{ cache_mode }}</p>
     </form>
 
     {% if plot_url %}
