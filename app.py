@@ -36,9 +36,15 @@ class FinancialGAT(torch.nn.Module):
 
 def discover_stocks(target_symbol):
     print(f">>>> [1/4] 正在利用 AI 分析供應鏈角色...")
-    prompt = f"分析台股「{target_symbol}」並找其供應鏈最相關 10 個股票。格式範例：{target_symbol}:名稱:目標, 2330.TW:台積電:上游, 3680.TWO:健策:下游。僅回傳格式字串。"
+    # 修正重點：強制要求「台股代號」與「正確後綴」
+    prompt = (
+        f"分析台股「{target_symbol}」的供應鏈，找尋最相關的 10 個「台灣上市櫃公司」。"
+        "【精確度要求】：請務必確認代號正確性（例如：盟立應為 2464.TW 而非 2497.TW）。"
+        "必須提供台股代號（.TW 或 .TWO）。"
+        f"格式範例：{target_symbol}:名稱:目標, 2330.TW:台積電:上游, 3680.TWO:家登:下游。\n"
+        "僅回傳格式字串。"
+    )
     try:
-        # 使用 1.5-flash 獲取較高 Quota，若 2.5 才行則手動改回
         response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
         text = response.text.strip()
         raw_items = text.replace('\n', ',').split(',')
@@ -46,6 +52,7 @@ def discover_stocks(target_symbol):
         for item in raw_items:
             if item.count(':') == 2:
                 s, n, r = item.split(':')
+                # 確保大寫並處理可能的空白
                 stocks.append(s.strip().upper()); names.append(n.strip()); roles.append(r.strip())
         return stocks, names, roles
     except Exception as e:
@@ -111,39 +118,49 @@ def get_plot_url(v_names, v_symbols, scores, v_roles, corr_matrix):
     print(f">>>> [3/4] 正在繪製視覺優化後的風險圖譜...")
     plt.clf(); fig, ax = plt.subplots(figsize=(16, 13)); G = nx.DiGraph()
 
-    for i, name in enumerate(v_names): G.add_node(i, label=f"{name}\n({v_symbols[i]})", role=v_roles[i])
-    target_idx = next((i for i, r in enumerate(v_roles) if r == "目標"), None)
+    # 1. 建立節點
+    for i, name in enumerate(v_names): 
+        G.add_node(i, label=f"{name}\n({v_symbols[i]})", role=v_roles[i])
+    
+    # 2. 保底邏輯：如果沒人標記為「目標」，則設定第一個節點為中心
+    target_idx = next((i for i, r in enumerate(v_roles) if "目標" in r or "核心" in r), 0)
 
+    # 3. 建立連線 (只要角色關鍵字對上就連線)
     for i in range(len(v_names)):
         for j in range(len(v_names)):
             if i == j: continue
-            if (v_roles[i] == "上游" and v_roles[j] == "目標") or (v_roles[i] == "目標" and v_roles[j] == "下游"):
+            # 模糊比對角色關鍵字
+            is_u_to_t = ("上游" in v_roles[i]) and ("目標" in v_roles[j] or "核心" in v_roles[j])
+            is_t_to_d = ("目標" in v_roles[i] or "核心" in v_roles[i]) and ("下游" in v_roles[j])
+            
+            if is_u_to_t or is_t_to_d:
                 if v_names[i] in corr_matrix.index and v_names[j] in corr_matrix.columns:
                     w = corr_matrix.loc[v_names[i], v_names[j]]
-                    if w > 0.1: G.add_edge(i, j, weight=w)
+                    if w > 0.05: G.add_edge(i, j, weight=w)
 
-    isolates = list(nx.isolates(G))
-    if target_idx is not None and target_idx in isolates: isolates.remove(target_idx)
-    G.remove_nodes_from(isolates)
-    
+    # 4. 佈局計算
     remaining = sorted(list(G.nodes()))
-    u_idx = [i for i in remaining if v_roles[i] == "上游"]
-    d_idx = [i for i in remaining if v_roles[i] == "下游"]
+    u_idx = [i for i in remaining if "上游" in v_roles[i]]
+    d_idx = [i for i in remaining if "下游" in v_roles[i]]
     
     pos = {target_idx: (0, 0)} if target_idx is not None else {}
     max_y = 0
+    # 確保座標計算不會噴錯
     for idx, u in enumerate(u_idx):
-        y = ((len(u_idx)-1-idx)-len(u_idx)/2.0+0.5)*2.8; pos[u] = (-1.5, y); max_y = max(max_y, abs(y))
+        y = ((len(u_idx)-1-idx)-len(u_idx)/2.0+0.5)*3.0; pos[u] = (-1.5, y); max_y = max(max_y, abs(y))
     for idx, d in enumerate(d_idx):
-        y = ((len(d_idx)-1-idx)-len(d_idx)/2.0+0.5)*2.8; pos[d] = (1.5, y); max_y = max(max_y, abs(y))
+        y = ((len(d_idx)-1-idx)-len(d_idx)/2.0+0.5)*3.0; pos[d] = (1.5, y); max_y = max(max_y, abs(y))
 
+    # 5. 繪圖
     node_colors = [scores[i].item() for i in remaining]
     nodes = nx.draw_networkx_nodes(G, pos, node_color=node_colors, cmap=plt.cm.Reds, node_size=4500, alpha=0.9, vmin=0.0, vmax=1.0)
     
     if G.edges():
         nx.draw_networkx_edges(G, pos, edgelist=G.edges(), width=[max(1.0, G[u][v]['weight']*15) for u,v in G.edges()], alpha=0.3, edge_color='#888', arrows=True, arrowsize=30)
-        nx.draw_networkx_edge_labels(G, pos, edge_labels={k: f"{v:.2f}" for k, v in nx.get_edge_attributes(G, 'weight').items()}, font_size=10)
-
+    
+    edge_labels = {(u, v): f"{G[u][v]['weight']:.2f}" for u, v in G.edges()}
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10, font_color='#555')
+    
     nx.draw_networkx_labels(G, pos, labels=nx.get_node_attributes(G, 'label'), font_family='Microsoft JhengHei', font_weight='bold', font_size=11)
     
     title_y = max_y + 1.8
@@ -192,9 +209,18 @@ def index():
             v_roles = []
             clean_stocks_list = [s.split('.')[0] for s in stocks_list]
             
+            # --- 增加：核心代號強制匹配邏輯 (Fail-safe) ---
+            # 將輸入的 target 預處理，去除可能的後綴（例：2330.TW -> 2330）
+            input_target_clean = target.split('.')[0].upper() 
+            
             for s in v_symbols:
                 clean_s = s.split('.')[0]
-                if clean_s in clean_stocks_list:
+                
+                # --- [修正核心問題的地方] ---
+                if clean_s == input_target_clean:
+                    # 強制設定為核心目標角色，不論 AI 先前給了什麼
+                    v_roles.append("目標") 
+                elif clean_s in clean_stocks_list:
                     idx = clean_stocks_list.index(clean_s)
                     v_roles.append(roles_list[idx])
                 else:
