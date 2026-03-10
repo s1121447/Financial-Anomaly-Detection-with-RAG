@@ -37,13 +37,16 @@
 - 顯示節點異常程度
 - 顯示 AI 自動化分析報告
 
-本專案以 Logistic Regression 作為 baseline，並與 GAT 模型進行比較。
+## Experimental Results
 
-| Model                                 |        Accuracy | Precision (Anomaly) | Recall (Anomaly) |    F1 (Anomaly) |
-| ------------------------------------- | --------------: | ------------------: | ---------------: | --------------: |
-| Logistic Regression                   |          0.9237 |              0.0000 |           0.0000 |          0.0000 |
-| GAT (unweighted)                      |          0.9268 |              1.0000 |           0.0123 |          0.0244 |
-| GAT (weighted + anomaly-F1 selection) | 0.8035 ~ 0.8633 |     0.1561 ~ 0.2012 |  0.2840 ~ 0.3745 | 0.2203 ~ 0.2355 |
+| Model | Accuracy | Precision (Anomaly) | Recall (Anomaly) | F1 (Anomaly) |
+|---|---:|---:|---:|---:|
+| Logistic Regression | 0.9237 | 0.0000 | 0.0000 | 0.0000 |
+| Random Forest | 0.7474 | 0.1642 | 0.5885 | 0.2567 |
+| GAT (unweighted) | 0.9268 | 1.0000 | 0.0123 | 0.0244 |
+| GAT (weighted + anomaly-F1 selection) | 0.8035 ~ 0.8633 | 0.1561 ~ 0.2012 | 0.2840 ~ 0.3745 | 0.2203 ~ 0.2355 |
+
+The current experiments show that the weighted GAT model improves anomaly detection compared with Logistic Regression, but it still does not outperform the Random Forest baseline in anomaly F1-score. This suggests that the current graph construction and feature design may not yet fully unlock the advantage of graph-based learning.
 
 
 結果顯示，雖然 baseline 與未加權 GAT 在 accuracy 上表現較高，但對異常類別幾乎沒有辨識能力。加入 class weights 後，GAT 在 anomaly recall 與 F1-score 上明顯提升，顯示在高度類別不平衡的金融異常偵測任務中，單看 accuracy 並不足以反映模型的真實效能。
