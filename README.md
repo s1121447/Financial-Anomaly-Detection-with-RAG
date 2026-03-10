@@ -47,6 +47,17 @@
 
 結果顯示，雖然 baseline 與未加權 GAT 在 accuracy 上表現較高，但對異常類別幾乎沒有辨識能力。加入 class weights 後，GAT 在 anomaly recall 與 F1-score 上明顯提升，顯示在高度類別不平衡的金融異常偵測任務中，單看 accuracy 並不足以反映模型的真實效能。
 
+## Threshold 分析
+
+本研究進一步對驗證集進行 threshold sweep，以將節點異常機率轉換為二元異常預測。
+
+結果顯示目前最佳 threshold 為 **0.50**，其異常類別表現為：
+
+- Precision：0.2012
+- Recall：0.2840
+- F1-score：0.2355
+
+這表示在目前模型設定下，0.50 為 precision 與 recall 的最佳平衡點；若 threshold 過低，會造成大量誤報；若 threshold 過高，則會漏掉大部分異常節點。
 
 ---
 
