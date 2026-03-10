@@ -1,45 +1,155 @@
-📈融合大語言模型與圖傳導演算法之金融風險預警平台
+# GNN 金融供應鏈異常偵測系統
 
-📖專案簡介 <br>
-本專案開發於 2026 年，旨在解決金融市場中「資訊不對稱」與「輿情言行背離」之風險。<br>
-系統結合了 圖神經網路 (Graph Neural Networks, GNN) 的空間推理能力與 大型語言模型 (LLM) 的語意理解力，建立一套自動化的供應鏈風險監測平台。
+結合 **大型語言模型（LLM）**、**供應鏈圖譜建構** 與 **圖神經網路（GNN）** 的台股異常偵測系統。  
+本系統讓使用者輸入台股代號後，自動建立該公司上下游供應鏈子圖，擷取各節點的市場特徵，並透過 GNN 模型推論供應鏈節點的異常風險，最後再由 LLM 生成可讀性的金融分析報告。
 
-透過 RAG (Retrieval-Augmented Generation) 技術，系統能動態檢索即時財經新聞，並針對 GNN 偵測出的異常節點提供可解釋性的 AI 診斷報告。
+---
 
-🚀核心技術亮點<br>
-1. 動態供應鏈發現 (Dynamic RAG Retrieval)：<br>
-    * 利用 Gemini 2.5 Flash 進行語意檢索，輸入單一股票代號即可自動識別其上下游供應鏈節點。<br>
-    * 具備自動後綴校正機制，支援台灣上市 (.TW) 與上櫃 (.TWO) 股票數據自動匹配。<br>
-2. GNN 異常偵測模型 (Spatial Reasoning)：<br>
-    * 採用 GAT (Graph Attention Network) 卷積層，捕捉供應鏈節點間的價格與成交量連動特徵。<br>
-    * 自研異常評分機制：<br>
-         - $$Score = |f_{\text{GAT}}(X, \text{Edges}) - X_{\text{actual}}|$$<br>
-3. 端對端 Web 交互介面：<br>
-    * 基於 Flask 框架構建，實現搜尋、運算、視覺化與報告生成的一鍵式體驗。<br>
-    * 整合 Matplotlib 高性能渲染技術，動態生成風險熱圖 (Risk Heatmap)。<br>
+## 專案特色
 
-🛠️技術棧 (Tech Stack)
-1. Deep Learning: PyTorch, PyTorch Geometric (GNN 核心)<br>
-2. LLM Interface: Google GenAI SDK (Gemini 2.0 Flash)<br>
-3. Backend: Flask (Web Server)<br>
-4. Data API: Yahoo Finance (yfinance)<br>
-5. Visualizations: NetworkX, Matplotlib<br>
+- 輸入單一台股代號，自動建立供應鏈子圖
+- 使用 Gemini 建立上下游節點與供應鏈關係
+- 使用 yfinance 擷取歷史股價與成交量資料
+- 使用 PyTorch Geometric 建立 GAT 模型進行節點異常分類
+- 使用 Flask 建立互動式前端頁面
+- 自動繪製供應鏈風險圖譜
+- 提供節點級 AI 分析報告
 
-📦安裝與環境設定<br>
-1. 複製專案<br>
-    * git clone https://github.com/你的帳號/GNN-Stock-Anomaly-Detection.git<br>
-    * cd GNN-Stock-Anomaly-Detection<br>
-2.安裝套件<br>
-    * pip install -r requirements.txt<br>
-3.設定環境變數<br>
-    * 請在根目錄建立 .env 檔案並填入您的 API Key：<br>
-        - GEMINI_API_KEY=您的_Gemini_API_Key<br>
+---
 
-🖥️ 執行與展示<br>
-    * python app.py<br>
+## 系統架構
 
-開啟瀏覽器前往 http://127.0.0.1:5000 <br>
-輸入台股代號（如 2330.TW）即可開始診斷。<br>
+本系統分為三個主要模組：
 
-未來展望 (Future Work)<br>
-預計將此系統擴充至 多層級供應鏈回溯分析，並嘗試串接真實情緒分析 API 以取代模擬數據。<br>
+### 1. LLM 建圖模組
+- 使用者輸入股票代號
+- Gemini 搜尋並建立目標公司之供應鏈子圖
+- 輸出節點（上游 / 目標 / 下游）與邊關係
+
+### 2. GNN 訓練 / 推論模組
+- 擷取各節點的歷史市場特徵
+- 建立圖結構資料集
+- 使用 GAT 模型進行節點異常分類
+- 輸出每個節點的異常風險分數
+
+### 3. Flask 視覺化模組
+- 顯示供應鏈風險圖譜
+- 顯示節點異常程度
+- 顯示 AI 自動化分析報告
+
+---
+
+## 專案架構
+
+```text
+financial_gnn/
+├─ app.py
+├─ config.py
+├─ graph_builder.py
+├─ feature_builder.py
+├─ dataset_builder.py
+├─ model.py
+├─ train_gnn.py
+├─ inference.py
+├─ requirements.txt
+├─ .env
+├─ cache/
+│  ├─ graphs/
+│  └─ datasets/
+├─ checkpoints/
+│  └─ gnn_model.pt
+└─ templates/
+   └─ index.html
+```
+##使用技術<br>
+Python<br>
+Flask<br>
+Google Gemini API<br>
+yfinance<br>
+PyTorch<br>
+PyTorch Geometric<br>
+NetworkX<br>
+Matplotlib<br>
+Pandas / NumPy<br>
+
+特徵設計<br>
+目前節點特徵包含：<br>
+1 日報酬率<br>
+5 日報酬率<br>
+20 日報酬率<br>
+1 日成交量變化率<br>
+5 日成交量均值比<br>
+5 日波動率<br>
+20 日波動率<br>
+MA5 偏離<br>
+MA20 偏離<br>
+RSI(14)<br>
+高低價區間比<br>
+
+標籤定義<br>
+目前模型以節點分類方式進行訓練。<br>
+若某節點在未來 5 個交易日內最大跌幅小於等於 -8%，則標記為異常節點（label = 1），否則為正常節點（label = 0）。
+
+安裝方式
+
+1. 建立環境
+
+建議使用 conda：
+```text
+conda create -n stock_gnn python=3.11 -y
+conda activate stock_gnn
+```
+2. 安裝套件
+```text
+pip install -r requirements.txt
+```
+3. 建立 .env
+
+請在專案根目錄建立 .env：
+```text
+GEMINI_API_KEY=你的_GEMINI_API_KEY
+```
+執行流程
+
+Step 1. 建立資料集
+```text
+python dataset_builder.py
+```
+這一步會：
+
+使用 Gemini 建立目標股票供應鏈子圖
+
+下載歷史市場資料
+
+建立圖資料集
+
+輸出到：
+
+cache/datasets/financial_graph_dataset.pt
+
+Step 2. 訓練 GNN 模型
+```text
+python train_gnn.py
+```
+訓練完成後會輸出模型到：
+
+checkpoints/gnn_model.pt
+
+Step 3. 啟動 Flask 系統
+```text
+python app.py
+```
+然後打開瀏覽器：
+
+http://127.0.0.1:5000
+使用方式
+
+在首頁輸入台股代號，例如 2330
+
+系統自動建立供應鏈子圖
+
+GNN 對節點進行異常風險推論
+
+顯示供應鏈風險圖譜
+
+點擊各公司標籤可查看個別 AI 診斷報告
