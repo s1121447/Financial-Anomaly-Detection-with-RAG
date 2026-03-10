@@ -37,6 +37,12 @@
 - 顯示節點異常程度
 - 顯示 AI 自動化分析報告
 
+| Model               | Accuracy | Precision (Anomaly) | Recall (Anomaly) | F1 (Anomaly) | Observation            |
+| ------------------- | -------: | ------------------: | ---------------: | -----------: | ---------------------- |
+| Logistic Regression |   0.9237 |              0.0000 |           0.0000 |       0.0000 | 完全抓不到異常                |
+| GAT (current)       |   0.9268 |              1.0000 |           0.0123 |       0.0244 | 比 baseline 好，但仍嚴重偏向正常類 |
+
+
 ---
 
 ## 專案架構
@@ -50,6 +56,7 @@ financial_gnn/
 ├─ dataset_builder.py
 ├─ model.py
 ├─ train_gnn.py
+├─ train_baseline.py
 ├─ inference.py
 ├─ requirements.txt
 ├─ .env
