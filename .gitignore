@@ -1,2 +1,8 @@
-.env 
-__pycache__/ 
+__pycache__/
+*.pyc
+.env
+cache/
+checkpoints/
+.vscode/
+.idea/
+.DS_Store
