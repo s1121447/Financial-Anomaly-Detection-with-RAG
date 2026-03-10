@@ -39,11 +39,12 @@
 
 本專案以 Logistic Regression 作為 baseline，並與 GAT 模型進行比較。
 
-| Model | Accuracy | Precision (Anomaly) | Recall (Anomaly) | F1 (Anomaly) |
-|---|---:|---:|---:|---:|
-| Logistic Regression | 0.9237 | 0.0000 | 0.0000 | 0.0000 |
-| GAT (unweighted) | 0.9268 | 1.0000 | 0.0123 | 0.0244 |
-| GAT (weighted loss) | 0.8984 | 0.1831 | 0.1070 | 0.1351 |
+| Model                                 |        Accuracy | Precision (Anomaly) | Recall (Anomaly) |    F1 (Anomaly) |
+| ------------------------------------- | --------------: | ------------------: | ---------------: | --------------: |
+| Logistic Regression                   |          0.9237 |              0.0000 |           0.0000 |          0.0000 |
+| GAT (unweighted)                      |          0.9268 |              1.0000 |           0.0123 |          0.0244 |
+| GAT (weighted + anomaly-F1 selection) | 0.8035 ~ 0.8633 |     0.1561 ~ 0.2012 |  0.2840 ~ 0.3745 | 0.2203 ~ 0.2355 |
+
 
 結果顯示，雖然 baseline 與未加權 GAT 在 accuracy 上表現較高，但對異常類別幾乎沒有辨識能力。加入 class weights 後，GAT 在 anomaly recall 與 F1-score 上明顯提升，顯示在高度類別不平衡的金融異常偵測任務中，單看 accuracy 並不足以反映模型的真實效能。
 
